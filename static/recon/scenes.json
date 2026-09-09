@@ -1,0 +1,90 @@
+[
+  {
+    "key": "0141",
+    "label": "MegaDepth 0141",
+    "dataset": "MegaDepth",
+    "n_input": null,
+    "n_registered": 2251,
+    "n_points": 150000,
+    "n_points_full": 257809,
+    "bytes": 1458124,
+    "grid": false
+  },
+  {
+    "key": "0493",
+    "label": "MegaDepth 0493",
+    "dataset": "MegaDepth",
+    "n_input": null,
+    "n_registered": 1489,
+    "n_points": 92409,
+    "n_points_full": 92409,
+    "bytes": 903229,
+    "grid": false
+  },
+  {
+    "key": "0455",
+    "label": "MegaDepth 0455",
+    "dataset": "MegaDepth",
+    "n_input": null,
+    "n_registered": 1078,
+    "n_points": 89773,
+    "n_points_full": 89773,
+    "bytes": 859777,
+    "grid": true
+  },
+  {
+    "key": "0023",
+    "label": "MegaDepth 0023",
+    "dataset": "MegaDepth",
+    "n_input": null,
+    "n_registered": 942,
+    "n_points": 72895,
+    "n_points_full": 72895,
+    "bytes": 701347,
+    "grid": true
+  },
+  {
+    "key": "Notre_Dame",
+    "label": "Notre Dame",
+    "dataset": "1DSfM",
+    "n_input": 549,
+    "n_registered": 527,
+    "n_points": 80555,
+    "n_points_full": 80555,
+    "bytes": 750367,
+    "grid": true
+  },
+  {
+    "key": "Ellis_Island",
+    "label": "Ellis Island",
+    "dataset": "1DSfM",
+    "n_input": 227,
+    "n_registered": 215,
+    "n_points": 40159,
+    "n_points_full": 40159,
+    "bytes": 371827,
+    "grid": true
+  },
+  {
+    "key": "NYC_Library",
+    "label": "NYC Library",
+    "dataset": "1DSfM",
+    "n_input": 330,
+    "n_registered": 295,
+    "n_points": 47876,
+    "n_points_full": 47876,
+    "bytes": 445120,
+    "grid": true
+  },
+  {
+    "key": "Yorkminster",
+    "label": "Yorkminster",
+    "dataset": "1DSfM",
+    "n_input": 432,
+    "n_registered": 402,
+    "n_points": 94318,
+    "n_points_full": 94318,
+    "bytes": 868234,
+    "grid": true
+  }
+]

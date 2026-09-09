@@ -1,0 +1,1976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="google-site-verification" content="0DdB5OUMjPIECnNDQsCR7aKGHWBuYuj4jEB11r4Q_ns" />
+
+<meta name="robots" content="index, follow">
+<meta name="author" content="Fadi Khatib, Meirav Galun, Ronen Basri">
+<title>VGPA &mdash; Learning Global Camera Poses from Noisy View-Graphs</title>
+<meta name="description" content="VGPA: a permutation-equivariant, edge-conditioned GNN that aggregates noisy pairwise relative poses into globally consistent camera extrinsics. Deep global Structure-from-Motion, trained without ground-truth supervision.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="VGPA: Learning Global Camera Poses from Noisy View-Graphs for Structure from Motion">
+<meta property="og:description" content="A permutation-equivariant GNN for view-graph pose averaging. Unsupervised, 1.9M parameters, scales past a thousand images.">
+<meta property="og:url" content="https://vgpa-sfm.github.io/">
+<meta property="og:image" content="https://vgpa-sfm.github.io/static/images/teaser/0023.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://vgpa-sfm.github.io/">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="static/css/style.css?v=a9790a08">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ScholarlyArticle",
+  "headline": "Learning Global Camera Poses from Noisy View-Graphs for Structure from Motion",
+  "url": "https://vgpa-sfm.github.io/",
+  "image": "https://vgpa-sfm.github.io/static/images/teaser/0023.png",
+  "inLanguage": "en",
+  "author": [
+    {"@type": "Person", "name": "Fadi Khatib", "url": "https://fadikhatib.github.io/",
+     "affiliation": {"@type": "Organization", "name": "Weizmann Institute of Science"}},
+    {"@type": "Person", "name": "Meirav Galun", "url": "https://www.weizmann.ac.il/math/meirav/",
+     "affiliation": {"@type": "Organization", "name": "Weizmann Institute of Science"}},
+    {"@type": "Person", "name": "Ronen Basri", "url": "https://www.weizmann.ac.il/math/ronen/home",
+     "affiliation": {"@type": "Organization", "name": "Weizmann Institute of Science"}}
+  ],
+  "publisher": {"@type": "Organization", "name": "European Conference on Computer Vision (ECCV)"},
+  "abstract": "Camera pose estimation is a key step in 3D reconstruction and view-synthesis pipelines. We present a deep, global Structure-from-Motion framework based on learned view-graph aggregation, using a permutation-equivariant, edge-conditioned graph neural network that takes noisy pairwise relative poses as input and outputs globally consistent camera extrinsics.",
+  "keywords": "Structure from Motion, camera pose estimation, pose averaging, graph neural network, 3D reconstruction"
+}
+</script>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle colour theme">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>
+</button>
+
+<!-- ====================================================== masthead ==== -->
+<header class="masthead">
+  <div class="wrap">
+
+    <span class="venue"><span class="dot"></span>ECCV 2026</span>
+
+    <h1>Learning Global Camera Poses from Noisy View-Graphs for Structure from Motion</h1>
+
+    <p class="method-name"><strong>VGPA</strong> &middot; <strong>V</strong>iew-<strong>G</strong>raph <strong>P</strong>ose <strong>A</strong>veraging</p>
+
+    <div class="authors">
+      <span><a href="https://fadikhatib.github.io/">Fadi Khatib</a></span>
+      <span><a href="https://www.weizmann.ac.il/math/meirav/">Meirav Galun</a></span>
+      <span><a href="https://www.weizmann.ac.il/math/ronen/home">Ronen Basri</a></span>
+    </div>
+
+    <p class="affil">Weizmann Institute of Science</p>
+
+    <!-- TODO(placeholder): replace every href="#" below with the real URL and
+         drop the data-placeholder attribute so the button stops reading "soon". -->
+    <nav class="links">
+      <a class="btn" href="vgpa_eccv26.pdf" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 2.5L18.5 9H14V4.5Z"/></svg>
+        Paper
+      </a>
+      <a class="btn btn--ghost" href="#" data-placeholder>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z"/></svg>
+        arXiv
+      </a>
+      <a class="btn btn--ghost" href="#" data-placeholder>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.36 1.09 2.94.83.09-.65.35-1.09.63-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/></svg>
+        Code
+      </a>
+      <a class="btn btn--ghost" href="#bibtex">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10a2 2 0 0 1 2 2v14l-7-3.5L5 20V6a2 2 0 0 1 2-2Z"/></svg>
+        BibTeX
+      </a>
+    </nav>
+
+  </div>
+</header>
+
+<!-- ======================================================== teaser ==== -->
+<section class="teaser">
+  <div class="wrap">
+    <div class="teaser-grid">
+      <figure class="fig fig--level recon" data-key="0141" data-src="static/recon/0141.vgpa">
+        <div class="recon__stage recon__stage--teaser">
+        <img class="recon__poster" src="static/images/teaser/0141.png" alt="Point cloud and 2,251 recovered camera frusta for MegaDepth scene 0141." loading="eager" decoding="async" width="1200" height="780">
+        <button class="recon__go" type="button">Explore in 3D</button>
+        </div>
+        <figcaption><b>Scene 0141</b> &mdash; MegaDepth, <b>2,251</b> cameras recovered</figcaption>
+      </figure>
+      <figure class="fig fig--level recon" data-key="0023" data-src="static/recon/0023.vgpa">
+        <div class="recon__stage recon__stage--teaser">
+        <img class="recon__poster" src="static/images/teaser/0023.png" alt="Point cloud and 942 recovered camera frusta for MegaDepth scene 0023." loading="eager" width="1194" height="618">
+        <button class="recon__go" type="button">Explore in 3D</button>
+        </div>
+        <figcaption><b>Scene 0023</b> &mdash; MegaDepth, <b>942</b> cameras recovered</figcaption>
+      </figure>
+      <figure class="fig fig--level recon" data-key="0455" data-src="static/recon/0455.vgpa">
+        <div class="recon__stage recon__stage--teaser">
+        <img class="recon__poster" src="static/images/teaser/0455.png" alt="Point cloud and 1,078 recovered camera frusta for MegaDepth scene 0455." loading="eager" width="1266" height="476">
+        <button class="recon__go" type="button">Explore in 3D</button>
+        </div>
+        <figcaption><b>Scene 0455</b> &mdash; MegaDepth, <b>1,078</b> cameras recovered</figcaption>
+      </figure>
+    </div>
+    <p class="caption">
+      Reconstructions and recovered cameras on three large scenes. The largest holds 2,251
+      cameras. Image-based deep methods such as VGGT and VGGSfM do not run at this scale.
+    </p>
+  </div>
+</section>
+
+<!-- ====================================================== abstract ==== -->
+<section id="abstract">
+  <div class="wrap wrap--narrow">
+    <div class="section-head"><h2>Abstract</h2></div>
+    <div class="abstract">
+      <p>
+        Camera pose estimation is a key step in 3D reconstruction and view-synthesis pipelines. We
+        present a deep, global Structure-from-Motion framework based on learned view-graph
+        aggregation. Our method employs a permutation-equivariant, edge-conditioned graph neural
+        network that takes noisy pairwise relative poses as input and outputs globally consistent
+        camera extrinsics. The network is trained without ground-truth supervision, relying solely on
+        a relative-pose consistency objective. This is followed by 3D point triangulation and robust
+        bundle adjustment. Our approach is efficient, scalable to more than a thousand images, and
+        robust to graph density. We evaluate our method on MegaDepth, 1DSfM, Strecha, and BlendedMVS.
+        These experiments demonstrate that our method achieves superior rotation and translation
+        accuracy compared to deep track-centric methods while registering more images across many
+        scenes, and competitive results compared to state-of-the-art classical pipelines, while being
+        much faster.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================================================== highlights ==== -->
+<section id="highlights">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>At a glance</h2>
+      <p>Runtime is the mean over the ten 1DSfM scenes, on the same point tracks as every baseline, and excludes the shared matching stage.</p>
+    </div>
+    <div class="highlights">
+      <div class="stat">
+        <div class="num">1.9<small>M</small></div>
+        <div class="lbl">parameters &mdash; the whole pose-averaging network</div>
+      </div>
+      <div class="stat">
+        <div class="num">16<small>&times;</small></div>
+        <div class="lbl">faster than COLMAP, and 6&times; faster than GLOMAP</div>
+      </div>
+      <div class="stat">
+        <div class="num num--word">Self-supervised</div>
+        <div class="lbl">no ground-truth poses are used at any stage of training</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================================================== interactive ==== -->
+<section id="interactive">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Interactive reconstructions</h2>
+      <p>
+        Interactive 3D views of the reconstructions. Press <b>Explore in 3D</b> on any of them to orbit it yourself.
+      </p>
+    </div>
+
+    <div class="recon-grid">
+    <!-- BEGIN recon-cards (generated by tools/render_section.py) -->
+      <figure class="recon" data-key="0455" data-src="static/recon/0455.vgpa">
+        <div class="recon__stage">
+          <img class="recon__poster" src="static/recon/0455.jpg"
+               alt="Reconstruction of MegaDepth 0455: recovered 3D points with the estimated cameras in red."
+               loading="lazy" decoding="async" width="560" height="380">
+          <button class="recon__go" type="button">Explore in 3D</button>
+        </div>
+      </figure>
+      <figure class="recon" data-key="0023" data-src="static/recon/0023.vgpa">
+        <div class="recon__stage">
+          <img class="recon__poster" src="static/recon/0023.jpg"
+               alt="Reconstruction of MegaDepth 0023: recovered 3D points with the estimated cameras in red."
+               loading="lazy" decoding="async" width="560" height="380">
+          <button class="recon__go" type="button">Explore in 3D</button>
+        </div>
+      </figure>
+      <figure class="recon" data-key="Notre_Dame" data-src="static/recon/Notre_Dame.vgpa">
+        <div class="recon__stage">
+          <img class="recon__poster" src="static/recon/Notre_Dame.jpg"
+               alt="Reconstruction of Notre Dame: recovered 3D points with the estimated cameras in red."
+               loading="lazy" decoding="async" width="560" height="380">
+          <button class="recon__go" type="button">Explore in 3D</button>
+        </div>
+      </figure>
+      <figure class="recon" data-key="Ellis_Island" data-src="static/recon/Ellis_Island.vgpa">
+        <div class="recon__stage">
+          <img class="recon__poster" src="static/recon/Ellis_Island.jpg"
+               alt="Reconstruction of Ellis Island: recovered 3D points with the estimated cameras in red."
+               loading="lazy" decoding="async" width="560" height="380">
+          <button class="recon__go" type="button">Explore in 3D</button>
+        </div>
+      </figure>
+      <figure class="recon" data-key="NYC_Library" data-src="static/recon/NYC_Library.vgpa">
+        <div class="recon__stage">
+          <img class="recon__poster" src="static/recon/NYC_Library.jpg"
+               alt="Reconstruction of NYC Library: recovered 3D points with the estimated cameras in red."
+               loading="lazy" decoding="async" width="560" height="380">
+          <button class="recon__go" type="button">Explore in 3D</button>
+        </div>
+      </figure>
+      <figure class="recon" data-key="Yorkminster" data-src="static/recon/Yorkminster.vgpa">
+        <div class="recon__stage">
+          <img class="recon__poster" src="static/recon/Yorkminster.jpg"
+               alt="Reconstruction of Yorkminster: recovered 3D points with the estimated cameras in red."
+               loading="lazy" decoding="async" width="560" height="380">
+          <button class="recon__go" type="button">Explore in 3D</button>
+        </div>
+      </figure>
+    <!-- END recon-cards -->
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= method ===== -->
+<section id="method">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Method</h2>
+      <p>
+        The pipeline has two parts: preprocessing, which builds the view graph and the point
+        tracks, and a network that averages the graph into global camera poses. The view graph has
+        one node per image and one edge per relative pose recovered by RANSAC. Point tracks are used
+        only afterwards, for triangulation and bundle adjustment.
+      </p>
+    </div>
+
+    <figure class="fig fig--plain">
+      <img src="static/images/method/architecture.png?v=cc72fc97" alt="VGPA architecture: preprocessing builds a view graph from essential matrices, an edge-conditioned GNN aggregates it into camera embeddings, a head regresses global extrinsics, and triangulation plus bundle adjustment recovers structure." width="1726" height="609">
+    </figure>
+
+    <div class="steps">
+      <div class="step">
+        <h3>Preprocessing</h3>
+        <p>SIFT matching and RANSAC give a partial set of essential matrices. Decomposing each yields
+        a relative rotation <em>R<sub>ij</sub></em> and a unit translation direction
+        <em>t<sub>ij</sub></em>, which become the edges of the view graph. The matched pairs are
+        also joined into point tracks, which are set aside until after the poses are solved.</p>
+      </div>
+      <div class="step">
+        <h3>Pose-averaging GNN</h3>
+        <p>All the geometry lies on the edges, so nodes start from a shared token and are updated
+        by edge-conditioned message passing. The network is equivariant to relabelings of the
+        graph.</p>
+      </div>
+      <div class="step">
+        <h3>Pose head</h3>
+        <p>A 3-layer MLP maps each node embedding to a translation and a quaternion, normalized to
+        the unit sphere. One forward pass produces every camera in the scene at once.</p>
+      </div>
+      <div class="step">
+        <h3>Triangulation &amp; BA</h3>
+        <p>The predicted cameras and the point tracks give 3D points by DLT triangulation,
+        followed by robust bundle adjustment. An optional view-reintegration step adds back cameras
+        that bundle adjustment discarded.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ====================================================== results ==== -->
+<section id="results">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Quantitative results</h2>
+      <p>N<sub>c</sub> is the number of input images, N<sub>r</sub> the number registered. A marker highlights the best value in each row for each metric.</p>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-1dsfm" aria-controls="panel-1dsfm" aria-selected="true" type="button">1DSfM</button>
+      <button class="tab" role="tab" id="tab-megadepth" aria-controls="panel-megadepth" aria-selected="false" type="button">MegaDepth</button>
+      <button class="tab" role="tab" id="tab-strecha" aria-controls="panel-strecha" aria-selected="false" type="button">Strecha &amp; BlendedMVS</button>
+      <button class="tab" role="tab" id="tab-feedforward" aria-controls="panel-feedforward" aria-selected="false" type="button">vs. feed-forward 3D</button>
+      <button class="tab" role="tab" id="tab-retrieval" aria-controls="panel-retrieval" aria-selected="false" type="button">Graph density</button>
+      <button class="tab" role="tab" id="tab-uncalibrated" aria-controls="panel-uncalibrated" aria-selected="false" type="button">Unknown intrinsics</button>
+    </div>
+    <div class="panel" role="tabpanel" id="panel-1dsfm" aria-labelledby="tab-1dsfm">
+      <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="scene" rowspan="2">Scene</th>
+            <th rowspan="2">N<sub>c</sub></th>
+            <th rowspan="2">Out.%</th>
+            <th class="sep-l grp ours" colspan="3">VGPA (ours)</th>
+            <th class="sep-l grp" colspan="3">RESfM</th>
+            <th class="sep-ll grp" colspan="3">Theia</th>
+            <th class="sep-l grp" colspan="3">GLOMAP</th>
+          </tr>
+          <tr>
+            <th class="sep-l col-ours">N<sub>r</sub></th>
+            <th class="col-ours">Rot&deg;</th>
+            <th class="col-ours">Trans</th>
+            <th class="sep-l"  >N<sub>r</sub></th>
+            <th>Rot&deg;</th>
+            <th>Trans</th>
+            <th class="sep-ll" >N<sub>r</sub></th>
+            <th>Rot&deg;</th>
+            <th>Trans</th>
+            <th class="sep-l" >N<sub>r</sub></th>
+            <th>Rot&deg;</th>
+            <th>Trans</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="scene">Alamo</td>
+            <td>573</td>
+            <td>32.6</td>
+            <td class="sep-l col-ours">523</td>
+            <td class="win col-ours">1.35</td>
+            <td class="win col-ours">0.322</td>
+            <td class="sep-l"  >484</td>
+            <td>3.66</td>
+            <td>0.515</td>
+            <td class="sep-ll"  >549</td>
+            <td>4.42</td>
+            <td>1.433</td>
+            <td class="sep-l win">557</td>
+            <td>2.45</td>
+            <td>1.520</td>
+          </tr>
+          <tr>
+            <td class="scene">Ellis Island</td>
+            <td>227</td>
+            <td>25.1</td>
+            <td class="sep-l col-ours">215</td>
+            <td class="win col-ours">0.28</td>
+            <td class="win col-ours">0.081</td>
+            <td class="sep-l"  >214</td>
+            <td>0.82</td>
+            <td>0.122</td>
+            <td class="sep-ll"  >213</td>
+            <td>5.01</td>
+            <td>1.527</td>
+            <td class="sep-l win">219</td>
+            <td>0.58</td>
+            <td>0.155</td>
+          </tr>
+          <tr>
+            <td class="scene">Madrid Metropolis</td>
+            <td>333</td>
+            <td>39.4</td>
+            <td class="sep-l col-ours">298</td>
+            <td class="col-ours">1.31</td>
+            <td class="win col-ours">0.145</td>
+            <td class="sep-l"  >244</td>
+            <td>8.42</td>
+            <td>0.827</td>
+            <td class="sep-ll"  >319</td>
+            <td>2.61</td>
+            <td>0.903</td>
+            <td class="sep-l win">320</td>
+            <td class="win">1.22</td>
+            <td>0.242</td>
+          </tr>
+          <tr>
+            <td class="scene">Montreal Notre Dame</td>
+            <td>448</td>
+            <td>31.7</td>
+            <td class="sep-l col-ours">442</td>
+            <td class="col-ours">0.93</td>
+            <td class="col-ours">0.418</td>
+            <td class="sep-l"  >346</td>
+            <td>2.82</td>
+            <td>0.352</td>
+            <td class="sep-ll"  >420</td>
+            <td>4.47</td>
+            <td>1.285</td>
+            <td class="sep-l win">444</td>
+            <td class="win">0.60</td>
+            <td class="win">0.211</td>
+          </tr>
+          <tr>
+            <td class="scene">NYC Library</td>
+            <td>330</td>
+            <td>33.6</td>
+            <td class="sep-l col-ours">295</td>
+            <td class="win col-ours">0.34</td>
+            <td class="win col-ours">0.095</td>
+            <td class="sep-l"  >224</td>
+            <td>3.96</td>
+            <td>0.429</td>
+            <td class="sep-ll"  >313</td>
+            <td>4.06</td>
+            <td>1.141</td>
+            <td class="sep-l win">323</td>
+            <td>0.58</td>
+            <td>0.189</td>
+          </tr>
+          <tr>
+            <td class="scene">Notre Dame</td>
+            <td>549</td>
+            <td>35.6</td>
+            <td class="sep-l col-ours">527</td>
+            <td class="win col-ours">0.52</td>
+            <td class="win col-ours">0.105</td>
+            <td class="sep-l"  >517</td>
+            <td>1.20</td>
+            <td>0.231</td>
+            <td class="sep-ll"  >531</td>
+            <td>3.70</td>
+            <td>0.828</td>
+            <td class="sep-l win">543</td>
+            <td>2.73</td>
+            <td>0.389</td>
+          </tr>
+          <tr>
+            <td class="scene">Piazza del Popolo</td>
+            <td>336</td>
+            <td>33.1</td>
+            <td class="sep-l col-ours">318</td>
+            <td class="col-ours">5.37</td>
+            <td class="col-ours">0.670</td>
+            <td class="sep-l"  >249</td>
+            <td>2.20</td>
+            <td class="win">0.186</td>
+            <td class="sep-ll"  >324</td>
+            <td>3.31</td>
+            <td>1.053</td>
+            <td class="sep-l win">331</td>
+            <td class="win">0.80</td>
+            <td>0.188</td>
+          </tr>
+          <tr>
+            <td class="scene">Tower of London</td>
+            <td>467</td>
+            <td>27.0</td>
+            <td class="sep-l col-ours">457</td>
+            <td class="col-ours">0.89</td>
+            <td class="col-ours">0.057</td>
+            <td class="sep-l"  >94</td>
+            <td class="win">0.67</td>
+            <td class="win">0.026</td>
+            <td class="sep-ll"  >448</td>
+            <td>6.61</td>
+            <td>1.189</td>
+            <td class="sep-l win">466</td>
+            <td>0.81</td>
+            <td>0.138</td>
+          </tr>
+          <tr>
+            <td class="scene">Vienna Cathedral</td>
+            <td>824</td>
+            <td>31.4</td>
+            <td class="sep-l col-ours">763</td>
+            <td class="col-ours">7.90</td>
+            <td class="col-ours">0.590</td>
+            <td class="sep-l"  >479</td>
+            <td class="win">1.52</td>
+            <td class="win">0.112</td>
+            <td class="sep-ll"  >767</td>
+            <td>12.25</td>
+            <td>1.663</td>
+            <td class="sep-l win">822</td>
+            <td>2.00</td>
+            <td>2.414</td>
+          </tr>
+          <tr>
+            <td class="scene">Yorkminster</td>
+            <td>432</td>
+            <td>29.0</td>
+            <td class="sep-l col-ours">402</td>
+            <td class="win col-ours">0.43</td>
+            <td class="win col-ours">0.044</td>
+            <td class="sep-l"  >331</td>
+            <td>14.54</td>
+            <td>1.468</td>
+            <td class="sep-ll"  >387</td>
+            <td>8.35</td>
+            <td>1.916</td>
+            <td class="sep-l win">418</td>
+            <td>0.95</td>
+            <td>0.316</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td class="scene">Mean</td>
+            <td>451</td>
+            <td>31.9</td>
+            <td class="sep-l col-ours">424</td>
+            <td class="col-ours">1.93</td>
+            <td class="win col-ours">0.253</td>
+            <td class="sep-l"  >318</td>
+            <td>3.98</td>
+            <td>0.427</td>
+            <td class="sep-ll"  >427</td>
+            <td>5.48</td>
+            <td>1.294</td>
+            <td class="sep-l win">444</td>
+            <td class="win">1.27</td>
+            <td>0.576</td>
+          </tr>
+        </tfoot>
+      </table>
+      </div>
+      <p class="tbl-note">GLOMAP registers the most images on nine of ten scenes; VGPA is the most accurate on rotation and translation on the majority of them, and has the lowest mean translation error.</p>
+    </div>
+    <div class="panel" role="tabpanel" id="panel-megadepth" aria-labelledby="tab-megadepth" hidden>
+      <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="scene" rowspan="2">Scene</th>
+            <th rowspan="2">N<sub>c</sub></th>
+            <th rowspan="2">Out.%</th>
+            <th class="sep-l grp ours" colspan="3">VGPA (ours)</th>
+            <th class="sep-l grp" colspan="3">RESfM</th>
+            <th class="sep-ll grp" colspan="3">Theia</th>
+            <th class="sep-l grp" colspan="3">GLOMAP</th>
+          </tr>
+          <tr>
+            <th class="sep-l col-ours">N<sub>r</sub></th>
+            <th class="col-ours">Rot&deg;</th>
+            <th class="col-ours">Trans</th>
+            <th class="sep-l"  >N<sub>r</sub></th>
+            <th>Rot&deg;</th>
+            <th>Trans</th>
+            <th class="sep-ll" >N<sub>r</sub></th>
+            <th>Rot&deg;</th>
+            <th>Trans</th>
+            <th class="sep-l" >N<sub>r</sub></th>
+            <th>Rot&deg;</th>
+            <th>Trans</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="scene">0238</td>
+            <td>522</td>
+            <td>44.6</td>
+            <td class="sep-l col-ours">486</td>
+            <td class="col-ours">1.06</td>
+            <td class="win col-ours">0.285</td>
+            <td class="sep-l"  >283</td>
+            <td>2.61</td>
+            <td>0.325</td>
+            <td class="sep-ll win">506</td>
+            <td>1.21</td>
+            <td>0.334</td>
+            <td class="sep-l" >497</td>
+            <td class="win">0.74</td>
+            <td>0.349</td>
+          </tr>
+          <tr>
+            <td class="scene">0060</td>
+            <td>528</td>
+            <td>41.6</td>
+            <td class="sep-l col-ours">518</td>
+            <td class="win col-ours">0.10</td>
+            <td class="win col-ours">0.026</td>
+            <td class="sep-l"  >503</td>
+            <td>0.29</td>
+            <td>0.029</td>
+            <td class="sep-ll win">525</td>
+            <td>0.85</td>
+            <td>0.124</td>
+            <td class="sep-l" >520</td>
+            <td>0.11</td>
+            <td>0.048</td>
+          </tr>
+          <tr>
+            <td class="scene">0197</td>
+            <td>870</td>
+            <td>40.7</td>
+            <td class="sep-l col-ours">718</td>
+            <td class="col-ours">0.58</td>
+            <td class="win col-ours">0.108</td>
+            <td class="sep-l"  >667</td>
+            <td>4.22</td>
+            <td>0.333</td>
+            <td class="sep-ll win">855</td>
+            <td>1.16</td>
+            <td>0.227</td>
+            <td class="sep-l" >813</td>
+            <td class="win">0.43</td>
+            <td>0.130</td>
+          </tr>
+          <tr>
+            <td class="scene">0094</td>
+            <td>763</td>
+            <td>40.1</td>
+            <td class="sep-l col-ours">659</td>
+            <td class="col-ours">0.81</td>
+            <td class="win col-ours">0.116</td>
+            <td class="sep-l"  >537</td>
+            <td>3.77</td>
+            <td>0.750</td>
+            <td class="sep-ll win">742</td>
+            <td class="win">0.75</td>
+            <td>0.160</td>
+            <td class="sep-l" >711</td>
+            <td>0.88</td>
+            <td>3.907</td>
+          </tr>
+          <tr>
+            <td class="scene">0265</td>
+            <td>571</td>
+            <td>38.8</td>
+            <td class="sep-l col-ours">372</td>
+            <td class="col-ours">5.30</td>
+            <td class="col-ours">1.433</td>
+            <td class="sep-l"  >346</td>
+            <td class="win">1.25</td>
+            <td class="win">0.389</td>
+            <td class="sep-ll win">554</td>
+            <td>5.83</td>
+            <td>2.216</td>
+            <td class="sep-l win">554</td>
+            <td>7.46</td>
+            <td>2.839</td>
+          </tr>
+          <tr>
+            <td class="scene">0083</td>
+            <td>635</td>
+            <td>31.3</td>
+            <td class="sep-l col-ours">622</td>
+            <td class="col-ours">0.32</td>
+            <td class="col-ours">0.062</td>
+            <td class="sep-l"  >596</td>
+            <td>0.64</td>
+            <td>0.058</td>
+            <td class="sep-ll win">632</td>
+            <td>0.37</td>
+            <td>0.372</td>
+            <td class="sep-l" >614</td>
+            <td class="win">0.08</td>
+            <td class="win">0.016</td>
+          </tr>
+          <tr>
+            <td class="scene">0076</td>
+            <td>558</td>
+            <td>30.5</td>
+            <td class="sep-l col-ours">547</td>
+            <td class="win col-ours">0.09</td>
+            <td class="win col-ours">0.037</td>
+            <td class="sep-l"  >524</td>
+            <td>0.37</td>
+            <td>0.094</td>
+            <td class="sep-ll win">549</td>
+            <td>0.78</td>
+            <td>0.120</td>
+            <td class="sep-l" >540</td>
+            <td>0.17</td>
+            <td>0.042</td>
+          </tr>
+          <tr>
+            <td class="scene">0185</td>
+            <td>368</td>
+            <td>30.0</td>
+            <td class="sep-l col-ours">364</td>
+            <td class="col-ours">0.12</td>
+            <td class="col-ours">0.021</td>
+            <td class="sep-l"  >350</td>
+            <td class="win">0.06</td>
+            <td class="win">0.010</td>
+            <td class="sep-ll win">365</td>
+            <td>0.41</td>
+            <td>0.094</td>
+            <td class="sep-l win">365</td>
+            <td>0.16</td>
+            <td>0.051</td>
+          </tr>
+          <tr>
+            <td class="scene">0048</td>
+            <td>512</td>
+            <td>24.2</td>
+            <td class="sep-l col-ours">501</td>
+            <td class="win col-ours">0.10</td>
+            <td class="win col-ours">0.011</td>
+            <td class="sep-l"  >474</td>
+            <td>4.69</td>
+            <td>0.178</td>
+            <td class="sep-ll win">507</td>
+            <td>0.41</td>
+            <td>0.105</td>
+            <td class="sep-l" >505</td>
+            <td>0.15</td>
+            <td>0.224</td>
+          </tr>
+          <tr>
+            <td class="scene">0024</td>
+            <td>356</td>
+            <td>23.0</td>
+            <td class="sep-l col-ours">328</td>
+            <td class="col-ours">3.59</td>
+            <td class="col-ours">1.122</td>
+            <td class="sep-l"  >309</td>
+            <td>2.03</td>
+            <td>0.398</td>
+            <td class="sep-ll win">355</td>
+            <td>0.56</td>
+            <td>0.219</td>
+            <td class="sep-l" >338</td>
+            <td class="win">0.15</td>
+            <td class="win">0.104</td>
+          </tr>
+          <tr>
+            <td class="scene">0223</td>
+            <td>214</td>
+            <td>17.0</td>
+            <td class="sep-l col-ours">211</td>
+            <td class="col-ours">3.45</td>
+            <td class="col-ours">0.285</td>
+            <td class="sep-l"  >204</td>
+            <td>3.76</td>
+            <td>0.510</td>
+            <td class="sep-ll"  >212</td>
+            <td>3.34</td>
+            <td>0.519</td>
+            <td class="sep-l win">213</td>
+            <td class="win">1.75</td>
+            <td class="win">0.275</td>
+          </tr>
+          <tr>
+            <td class="scene">5016</td>
+            <td>28</td>
+            <td>16.9</td>
+            <td class="sep-l win col-ours">28</td>
+            <td class="win col-ours">0.08</td>
+            <td class="win col-ours">0.015</td>
+            <td class="sep-l win">28</td>
+            <td>0.12</td>
+            <td>0.016</td>
+            <td class="sep-ll win">28</td>
+            <td>0.10</td>
+            <td>0.061</td>
+            <td class="sep-l win">28</td>
+            <td>0.08</td>
+            <td>0.046</td>
+          </tr>
+          <tr>
+            <td class="scene">0046</td>
+            <td>440</td>
+            <td>14.6</td>
+            <td class="sep-l col-ours">438</td>
+            <td class="col-ours">0.47</td>
+            <td class="col-ours">0.073</td>
+            <td class="sep-l"  >399</td>
+            <td>0.95</td>
+            <td>0.043</td>
+            <td class="sep-ll"  >434</td>
+            <td>0.25</td>
+            <td>0.112</td>
+            <td class="sep-l win">440</td>
+            <td class="win">0.03</td>
+            <td class="win">0.007</td>
+          </tr>
+          <tr>
+            <td class="scene" colspan="15" style="background:var(--surface-2);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted)">Group 2 &mdash; N<sub>c</sub> &gt; 1000, subsampled to 300</td>
+          </tr>
+          <tr>
+            <td class="scene">0099</td>
+            <td>299</td>
+            <td>47.4</td>
+            <td class="sep-l col-ours">157</td>
+            <td class="col-ours">0.56</td>
+            <td class="col-ours">0.229</td>
+            <td class="sep-l"  >190</td>
+            <td>3.53</td>
+            <td>0.709</td>
+            <td class="sep-ll win">297</td>
+            <td>3.28</td>
+            <td>0.664</td>
+            <td class="sep-l" >255</td>
+            <td class="win">0.15</td>
+            <td class="win">0.085</td>
+          </tr>
+          <tr>
+            <td class="scene">1001</td>
+            <td>285</td>
+            <td>43.9</td>
+            <td class="sep-l col-ours">268</td>
+            <td class="col-ours">3.87</td>
+            <td class="col-ours">2.585</td>
+            <td class="sep-l"  >251</td>
+            <td class="win">1.70</td>
+            <td class="win">0.661</td>
+            <td class="sep-ll win">275</td>
+            <td>7.89</td>
+            <td>3.990</td>
+            <td class="sep-l" >270</td>
+            <td>4.56</td>
+            <td>3.817</td>
+          </tr>
+          <tr>
+            <td class="scene">0231</td>
+            <td>296</td>
+            <td>42.2</td>
+            <td class="sep-l col-ours">260</td>
+            <td class="win col-ours">0.31</td>
+            <td class="win col-ours">0.029</td>
+            <td class="sep-l"  >246</td>
+            <td>0.84</td>
+            <td>0.065</td>
+            <td class="sep-ll win">286</td>
+            <td>1.37</td>
+            <td>0.322</td>
+            <td class="sep-l" >278</td>
+            <td>0.73</td>
+            <td>0.134</td>
+          </tr>
+          <tr>
+            <td class="scene">0411</td>
+            <td>299</td>
+            <td>29.9</td>
+            <td class="sep-l col-ours">268</td>
+            <td class="col-ours">0.23</td>
+            <td class="col-ours">0.036</td>
+            <td class="sep-l"  >273</td>
+            <td class="win">0.13</td>
+            <td class="win">0.020</td>
+            <td class="sep-ll win">293</td>
+            <td>0.39</td>
+            <td>0.196</td>
+            <td class="sep-l" >268</td>
+            <td>0.19</td>
+            <td>0.148</td>
+          </tr>
+          <tr>
+            <td class="scene">0377</td>
+            <td>295</td>
+            <td>27.5</td>
+            <td class="sep-l col-ours">232</td>
+            <td class="win col-ours">0.12</td>
+            <td class="win col-ours">0.016</td>
+            <td class="sep-l"  >210</td>
+            <td>0.29</td>
+            <td>0.018</td>
+            <td class="sep-ll win">269</td>
+            <td>1.13</td>
+            <td>0.205</td>
+            <td class="sep-l" >266</td>
+            <td>0.65</td>
+            <td>0.237</td>
+          </tr>
+          <tr>
+            <td class="scene">0102</td>
+            <td>299</td>
+            <td>25.8</td>
+            <td class="sep-l win col-ours">296</td>
+            <td class="col-ours">0.18</td>
+            <td class="win col-ours">0.023</td>
+            <td class="sep-l"  >284</td>
+            <td>0.28</td>
+            <td>0.059</td>
+            <td class="sep-ll"  >294</td>
+            <td>2.31</td>
+            <td>0.698</td>
+            <td class="sep-l" >293</td>
+            <td class="win">0.15</td>
+            <td>0.101</td>
+          </tr>
+          <tr>
+            <td class="scene">0147</td>
+            <td>298</td>
+            <td>24.6</td>
+            <td class="sep-l win col-ours">289</td>
+            <td class="win col-ours">1.36</td>
+            <td class="win col-ours">0.118</td>
+            <td class="sep-l"  >207</td>
+            <td>4.62</td>
+            <td>0.325</td>
+            <td class="sep-ll"  >284</td>
+            <td>6.36</td>
+            <td>0.934</td>
+            <td class="sep-l win">289</td>
+            <td>6.75</td>
+            <td>3.542</td>
+          </tr>
+          <tr>
+            <td class="scene">0148</td>
+            <td>287</td>
+            <td>24.6</td>
+            <td class="sep-l col-ours">244</td>
+            <td class="col-ours">1.15</td>
+            <td class="col-ours">0.135</td>
+            <td class="sep-l"  >197</td>
+            <td class="win">0.60</td>
+            <td class="win">0.035</td>
+            <td class="sep-ll"  >275</td>
+            <td>13.98</td>
+            <td>1.558</td>
+            <td class="sep-l win">282</td>
+            <td>22.73</td>
+            <td>2.646</td>
+          </tr>
+          <tr>
+            <td class="scene">0446</td>
+            <td>298</td>
+            <td>22.1</td>
+            <td class="sep-l win col-ours">296</td>
+            <td class="col-ours">0.34</td>
+            <td class="win col-ours">0.023</td>
+            <td class="sep-l"  >288</td>
+            <td>0.71</td>
+            <td>0.046</td>
+            <td class="sep-ll"  >289</td>
+            <td>1.23</td>
+            <td>0.391</td>
+            <td class="sep-l" >295</td>
+            <td class="win">0.20</td>
+            <td>0.071</td>
+          </tr>
+          <tr>
+            <td class="scene">0022</td>
+            <td>297</td>
+            <td>21.2</td>
+            <td class="sep-l col-ours">280</td>
+            <td class="win col-ours">0.11</td>
+            <td class="win col-ours">0.015</td>
+            <td class="sep-l"  >274</td>
+            <td>0.29</td>
+            <td>0.039</td>
+            <td class="sep-ll win">296</td>
+            <td>0.58</td>
+            <td>0.160</td>
+            <td class="sep-l" >280</td>
+            <td>0.22</td>
+            <td>0.087</td>
+          </tr>
+          <tr>
+            <td class="scene">0327</td>
+            <td>298</td>
+            <td>21.0</td>
+            <td class="sep-l col-ours">280</td>
+            <td class="col-ours">0.48</td>
+            <td class="win col-ours">0.032</td>
+            <td class="sep-l"  >271</td>
+            <td class="win">0.26</td>
+            <td>0.090</td>
+            <td class="sep-ll win">288</td>
+            <td>1.27</td>
+            <td>0.360</td>
+            <td class="sep-l win">288</td>
+            <td>15.54</td>
+            <td>2.035</td>
+          </tr>
+          <tr>
+            <td class="scene">0015</td>
+            <td>284</td>
+            <td>20.6</td>
+            <td class="sep-l col-ours">241</td>
+            <td class="col-ours">0.61</td>
+            <td class="win col-ours">0.083</td>
+            <td class="sep-l"  >215</td>
+            <td>1.04</td>
+            <td>0.167</td>
+            <td class="sep-ll"  >244</td>
+            <td>2.21</td>
+            <td>0.389</td>
+            <td class="sep-l win">272</td>
+            <td class="win">0.28</td>
+            <td>0.095</td>
+          </tr>
+          <tr>
+            <td class="scene">0455</td>
+            <td>298</td>
+            <td>19.8</td>
+            <td class="sep-l col-ours">292</td>
+            <td class="col-ours">0.40</td>
+            <td class="col-ours">0.071</td>
+            <td class="sep-l"  >293</td>
+            <td>0.68</td>
+            <td>0.105</td>
+            <td class="sep-ll"  >294</td>
+            <td>0.77</td>
+            <td>0.159</td>
+            <td class="sep-l win">297</td>
+            <td class="win">0.35</td>
+            <td class="win">0.064</td>
+          </tr>
+          <tr>
+            <td class="scene">0496</td>
+            <td>297</td>
+            <td>19.2</td>
+            <td class="sep-l col-ours">280</td>
+            <td class="col-ours">0.69</td>
+            <td class="win col-ours">0.041</td>
+            <td class="sep-l"  >281</td>
+            <td class="win">0.35</td>
+            <td>0.055</td>
+            <td class="sep-ll"  >285</td>
+            <td>1.40</td>
+            <td>0.550</td>
+            <td class="sep-l win">291</td>
+            <td>0.44</td>
+            <td>0.303</td>
+          </tr>
+          <tr>
+            <td class="scene">1589</td>
+            <td>299</td>
+            <td>17.4</td>
+            <td class="sep-l col-ours">294</td>
+            <td class="col-ours">0.13</td>
+            <td class="col-ours">0.074</td>
+            <td class="sep-l"  >290</td>
+            <td>0.14</td>
+            <td class="win">0.019</td>
+            <td class="sep-ll"  >288</td>
+            <td>0.82</td>
+            <td>0.193</td>
+            <td class="sep-l win">298</td>
+            <td class="win">0.07</td>
+            <td>0.041</td>
+          </tr>
+          <tr>
+            <td class="scene">0012</td>
+            <td>299</td>
+            <td>16.3</td>
+            <td class="sep-l win col-ours">295</td>
+            <td class="col-ours">0.77</td>
+            <td class="col-ours">0.086</td>
+            <td class="sep-l"  >287</td>
+            <td class="win">0.40</td>
+            <td class="win">0.027</td>
+            <td class="sep-ll"  >129</td>
+            <td>1.04</td>
+            <td>0.318</td>
+            <td class="sep-l win">295</td>
+            <td>0.51</td>
+            <td>0.121</td>
+          </tr>
+          <tr>
+            <td class="scene">0104</td>
+            <td>284</td>
+            <td>16.2</td>
+            <td class="sep-l col-ours">237</td>
+            <td class="col-ours">4.04</td>
+            <td class="col-ours">0.330</td>
+            <td class="sep-l"  >193</td>
+            <td class="win">0.29</td>
+            <td class="win">0.029</td>
+            <td class="sep-ll"  >265</td>
+            <td>17.05</td>
+            <td>1.530</td>
+            <td class="sep-l win">280</td>
+            <td>19.69</td>
+            <td>0.834</td>
+          </tr>
+          <tr>
+            <td class="scene">0019</td>
+            <td>299</td>
+            <td>15.4</td>
+            <td class="sep-l col-ours">288</td>
+            <td class="col-ours">0.23</td>
+            <td class="win col-ours">0.008</td>
+            <td class="sep-l"  >250</td>
+            <td class="win">0.06</td>
+            <td class="win">0.008</td>
+            <td class="sep-ll"  >271</td>
+            <td>0.81</td>
+            <td>0.250</td>
+            <td class="sep-l win">296</td>
+            <td>0.09</td>
+            <td>0.025</td>
+          </tr>
+          <tr>
+            <td class="scene">0063</td>
+            <td>293</td>
+            <td>14.5</td>
+            <td class="sep-l col-ours">266</td>
+            <td class="win col-ours">0.14</td>
+            <td class="win col-ours">0.024</td>
+            <td class="sep-l"  >262</td>
+            <td>0.46</td>
+            <td>0.048</td>
+            <td class="sep-ll"  >268</td>
+            <td>0.92</td>
+            <td>0.605</td>
+            <td class="sep-l win">287</td>
+            <td>0.32</td>
+            <td>0.100</td>
+          </tr>
+          <tr>
+            <td class="scene">0130</td>
+            <td>285</td>
+            <td>14.4</td>
+            <td class="sep-l col-ours">202</td>
+            <td class="col-ours">0.21</td>
+            <td class="win col-ours">0.019</td>
+            <td class="sep-l"  >192</td>
+            <td class="win">0.20</td>
+            <td>0.023</td>
+            <td class="sep-ll"  >187</td>
+            <td>1.20</td>
+            <td>0.349</td>
+            <td class="sep-l win">279</td>
+            <td>2.00</td>
+            <td>0.909</td>
+          </tr>
+          <tr>
+            <td class="scene">0080</td>
+            <td>284</td>
+            <td>12.9</td>
+            <td class="sep-l col-ours">141</td>
+            <td class="win col-ours">0.10</td>
+            <td class="win col-ours">0.017</td>
+            <td class="sep-l"  >139</td>
+            <td>0.59</td>
+            <td>0.096</td>
+            <td class="sep-ll"  >278</td>
+            <td>2.62</td>
+            <td>0.868</td>
+            <td class="sep-l win">282</td>
+            <td>1.92</td>
+            <td>0.236</td>
+          </tr>
+          <tr>
+            <td class="scene">0240</td>
+            <td>298</td>
+            <td>11.9</td>
+            <td class="sep-l col-ours">288</td>
+            <td class="col-ours">0.64</td>
+            <td class="win col-ours">0.088</td>
+            <td class="sep-l"  >275</td>
+            <td>3.13</td>
+            <td>0.265</td>
+            <td class="sep-ll"  >285</td>
+            <td>1.31</td>
+            <td>0.470</td>
+            <td class="sep-l win">290</td>
+            <td class="win">0.39</td>
+            <td>0.135</td>
+          </tr>
+          <tr>
+            <td class="scene">0007</td>
+            <td>290</td>
+            <td>11.7</td>
+            <td class="sep-l col-ours">284</td>
+            <td class="col-ours">1.51</td>
+            <td class="col-ours">0.079</td>
+            <td class="sep-l"  >172</td>
+            <td>0.91</td>
+            <td>0.041</td>
+            <td class="sep-ll"  >277</td>
+            <td>1.24</td>
+            <td>0.174</td>
+            <td class="sep-l win">289</td>
+            <td class="win">0.19</td>
+            <td class="win">0.035</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td class="scene">Mean</td>
+            <td>379</td>
+            <td>26.1</td>
+            <td class="sep-l col-ours">327</td>
+            <td class="win col-ours">0.95</td>
+            <td class="col-ours">0.215</td>
+            <td class="sep-l"  >299</td>
+            <td>1.29</td>
+            <td class="win">0.169</td>
+            <td class="sep-ll"  >347</td>
+            <td>2.42</td>
+            <td>0.555</td>
+            <td class="sep-l win">352</td>
+            <td>2.51</td>
+            <td>0.662</td>
+          </tr>
+        </tfoot>
+      </table>
+      </div>
+      <p class="tbl-note">Above the divider are Group&nbsp;1 scenes with fewer than 1000 images; below are Group&nbsp;2 scenes with more than 1000 images, subsampled to 300 for testing.</p>
+    </div>
+    <div class="panel" role="tabpanel" id="panel-strecha" aria-labelledby="tab-strecha" hidden>
+      <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="scene" rowspan="2">Scene</th>
+            <th rowspan="2">N<sub>c</sub></th>
+            <th rowspan="2">Out.%</th>
+            <th class="sep-l grp ours" colspan="3">VGPA (ours)</th>
+            <th class="sep-l grp" colspan="3">VGGT</th>
+            <th class="sep-l grp" colspan="3">MASt3R</th>
+            <th class="sep-l grp" colspan="3">VGGSfM</th>
+            <th class="sep-l grp" colspan="3">Theia</th>
+            <th class="sep-l grp" colspan="3">COLMAP</th>
+            <th class="sep-l grp" colspan="3">GLOMAP</th>
+          </tr>
+          <tr>
+            <th class="sep-l col-ours">Rot&deg;</th>
+            <th class="col-ours">Trans</th>
+            <th class="col-ours">Time&nbsp;s</th>
+            <th class="sep-l"  >Rot&deg;</th>
+            <th>Trans</th>
+            <th>Time&nbsp;s</th>
+            <th class="sep-l" >Rot&deg;</th>
+            <th>Trans</th>
+            <th>Time&nbsp;s</th>
+            <th class="sep-l"  >Rot&deg;</th>
+            <th>Trans</th>
+            <th>Time&nbsp;s</th>
+            <th class="sep-l"  >Rot&deg;</th>
+            <th>Trans</th>
+            <th>Time&nbsp;s</th>
+            <th class="sep-l"  >Rot&deg;</th>
+            <th>Trans</th>
+            <th>Time&nbsp;s</th>
+            <th class="sep-l"  >Rot&deg;</th>
+            <th>Trans</th>
+            <th>Time&nbsp;s</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="scene" colspan="24" style="background:var(--surface-2);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted)">Strecha</td>
+          </tr>
+          <tr>
+            <td class="scene">entry-P10</td>
+            <td>10</td>
+            <td>4.8</td>
+            <td class="sep-l win col-ours">0.004</td>
+            <td class="win col-ours">0.0005</td>
+            <td class="col-ours">7</td>
+            <td class="sep-l"  >0.079</td>
+            <td>0.033</td>
+            <td>16.5</td>
+            <td class="sep-l" >0.442</td>
+            <td>0.055</td>
+            <td>19</td>
+            <td class="sep-l"  >0.165</td>
+            <td>0.056</td>
+            <td>10.3</td>
+            <td class="sep-l"  >0.024</td>
+            <td>0.008</td>
+            <td class="win">0.9</td>
+            <td class="sep-l"  >0.023</td>
+            <td>0.007</td>
+            <td>36.0</td>
+            <td class="sep-l" >0.187</td>
+            <td>0.026</td>
+            <td>12.5</td>
+          </tr>
+          <tr>
+            <td class="scene">fountain-P11</td>
+            <td>11</td>
+            <td>1.4</td>
+            <td class="sep-l win col-ours">0.009</td>
+            <td class="win col-ours">0.0003</td>
+            <td class="col-ours">8</td>
+            <td class="sep-l"  >0.034</td>
+            <td>0.019</td>
+            <td>12.2</td>
+            <td class="sep-l" >0.160</td>
+            <td>0.026</td>
+            <td>22</td>
+            <td class="sep-l"  >0.172</td>
+            <td>0.016</td>
+            <td>15.4</td>
+            <td class="sep-l"  >0.027</td>
+            <td>0.002</td>
+            <td class="win">1.5</td>
+            <td class="sep-l"  >0.027</td>
+            <td>0.003</td>
+            <td>37.0</td>
+            <td class="sep-l" >0.194</td>
+            <td>0.022</td>
+            <td>38.6</td>
+          </tr>
+          <tr>
+            <td class="scene">Herz-Jesus-P8</td>
+            <td>8</td>
+            <td>1.8</td>
+            <td class="sep-l win col-ours">0.009</td>
+            <td class="win col-ours">0.0010</td>
+            <td class="col-ours">6</td>
+            <td class="sep-l"  >0.032</td>
+            <td>0.011</td>
+            <td>12.7</td>
+            <td class="sep-l" >0.363</td>
+            <td>0.037</td>
+            <td>16</td>
+            <td class="sep-l"  >0.206</td>
+            <td>0.042</td>
+            <td>8.7</td>
+            <td class="sep-l"  >0.025</td>
+            <td>0.005</td>
+            <td class="win">0.6</td>
+            <td class="sep-l"  >0.026</td>
+            <td>0.004</td>
+            <td>22.0</td>
+            <td class="sep-l" >0.091</td>
+            <td>0.015</td>
+            <td>5.0</td>
+          </tr>
+          <tr>
+            <td class="scene">Herz-Jesus-P25</td>
+            <td>25</td>
+            <td>2.8</td>
+            <td class="sep-l win col-ours">0.010</td>
+            <td class="win col-ours">0.0003</td>
+            <td class="col-ours">12</td>
+            <td class="sep-l"  >0.048</td>
+            <td>0.007</td>
+            <td>31.9</td>
+            <td class="sep-l" >0.869</td>
+            <td>0.057</td>
+            <td>81</td>
+            <td class="sep-l"  >0.158</td>
+            <td>0.046</td>
+            <td>19.6</td>
+            <td class="sep-l"  >0.026</td>
+            <td>0.006</td>
+            <td class="win">2.4</td>
+            <td class="sep-l"  >0.028</td>
+            <td>0.006</td>
+            <td>60.0</td>
+            <td class="sep-l" >0.138</td>
+            <td>0.013</td>
+            <td>76.6</td>
+          </tr>
+          <tr>
+            <td class="scene" colspan="24" style="background:var(--surface-2);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted)">BlendedMVS</td>
+          </tr>
+          <tr>
+            <td class="scene">scene0</td>
+            <td>75</td>
+            <td>2.0</td>
+            <td class="sep-l col-ours">0.149</td>
+            <td class="col-ours">0.0204</td>
+            <td class="col-ours">73</td>
+            <td class="sep-l"  >0.041</td>
+            <td>0.017</td>
+            <td>108</td>
+            <td class="sep-l" >0.501</td>
+            <td>0.191</td>
+            <td>516</td>
+            <td class="sep-l"  >0.045</td>
+            <td>0.0106</td>
+            <td>61</td>
+            <td class="sep-l"  >0.009</td>
+            <td>0.0017</td>
+            <td class="win">49</td>
+            <td class="sep-l win">0.006</td>
+            <td class="win">0.0005</td>
+            <td>106</td>
+            <td class="sep-l" >0.007</td>
+            <td>0.0016</td>
+            <td>198</td>
+          </tr>
+          <tr>
+            <td class="scene">scene1</td>
+            <td>51</td>
+            <td>1.4</td>
+            <td class="sep-l col-ours">0.342</td>
+            <td class="col-ours">0.0345</td>
+            <td class="col-ours">28</td>
+            <td class="sep-l"  >0.101</td>
+            <td>0.050</td>
+            <td>41</td>
+            <td class="sep-l" >0.919</td>
+            <td>0.173</td>
+            <td>1017</td>
+            <td class="sep-l"  >0.098</td>
+            <td>0.0112</td>
+            <td>32</td>
+            <td class="sep-l"  >0.029</td>
+            <td>0.0099</td>
+            <td class="win">18</td>
+            <td class="sep-l win">0.007</td>
+            <td class="win">0.0003</td>
+            <td>67</td>
+            <td class="sep-l" >0.024</td>
+            <td>0.0102</td>
+            <td>117</td>
+          </tr>
+          <tr>
+            <td class="scene">scene2</td>
+            <td>33</td>
+            <td>2.2</td>
+            <td class="sep-l col-ours">0.008</td>
+            <td class="col-ours">0.0004</td>
+            <td class="col-ours">17</td>
+            <td class="sep-l"  >0.230</td>
+            <td>0.022</td>
+            <td>52</td>
+            <td class="sep-l" >1.972</td>
+            <td>0.130</td>
+            <td>117</td>
+            <td class="sep-l"  >0.227</td>
+            <td>0.0180</td>
+            <td>30</td>
+            <td class="sep-l"  >0.045</td>
+            <td>0.0098</td>
+            <td class="win">15</td>
+            <td class="sep-l win">0.003</td>
+            <td class="win">0.0002</td>
+            <td>55</td>
+            <td class="sep-l" >0.025</td>
+            <td>0.0060</td>
+            <td>87</td>
+          </tr>
+          <tr>
+            <td class="scene">scene3</td>
+            <td>66</td>
+            <td>8.8</td>
+            <td class="sep-l col-ours">0.006</td>
+            <td class="col-ours">0.0003</td>
+            <td class="col-ours">54</td>
+            <td class="sep-l"  >0.353</td>
+            <td>0.014</td>
+            <td>276</td>
+            <td class="sep-l" >0.927</td>
+            <td>0.045</td>
+            <td>815</td>
+            <td class="sep-l"  >0.372</td>
+            <td>0.0174</td>
+            <td>52</td>
+            <td class="sep-l"  >0.019</td>
+            <td>0.0018</td>
+            <td class="win">21</td>
+            <td class="sep-l win">0.004</td>
+            <td class="win">0.0002</td>
+            <td>128</td>
+            <td class="sep-l" >0.008</td>
+            <td>0.0017</td>
+            <td>392</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="tbl-note">Small calibrated benchmarks with ground truth camera poses.</p>
+    </div>
+    <div class="panel" role="tabpanel" id="panel-feedforward" aria-labelledby="tab-feedforward" hidden>
+      <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="scene" rowspan="2">Scene</th>
+            <th rowspan="2">N<sub>c</sub></th>
+            <th class="sep-l grp ours" colspan="2">VGPA (ours)</th>
+            <th class="sep-l grp" colspan="2">TTT3R</th>
+            <th class="sep-l grp" colspan="2">CUT3R</th>
+            <th class="sep-l grp" colspan="2">FAST3R</th>
+          </tr>
+          <tr>
+            <th class="sep-l col-ours">Rot&deg;</th>
+            <th class="col-ours">Trans</th>
+            <th class="sep-l"  >Rot&deg;</th>
+            <th>Trans</th>
+            <th class="sep-l" >Rot&deg;</th>
+            <th>Trans</th>
+            <th class="sep-l" >Rot&deg;</th>
+            <th>Trans</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="scene">Alamo</td>
+            <td>573</td>
+            <td class="sep-l win col-ours">1.35</td>
+            <td class="win col-ours">0.322</td>
+            <td class="sep-l"  >16.08</td>
+            <td>3.650</td>
+            <td class="sep-l" >22.32</td>
+            <td>4.266</td>
+            <td class="sep-l">40.37</td>
+            <td>3.990</td>
+          </tr>
+          <tr>
+            <td class="scene">Ellis Island</td>
+            <td>227</td>
+            <td class="sep-l win col-ours">0.28</td>
+            <td class="win col-ours">0.081</td>
+            <td class="sep-l"  >8.85</td>
+            <td>2.333</td>
+            <td class="sep-l" >12.53</td>
+            <td>3.171</td>
+            <td class="sep-l">11.74</td>
+            <td>3.201</td>
+          </tr>
+          <tr>
+            <td class="scene">Madrid Metropolis</td>
+            <td>333</td>
+            <td class="sep-l win col-ours">1.31</td>
+            <td class="win col-ours">0.145</td>
+            <td class="sep-l"  >14.83</td>
+            <td>2.258</td>
+            <td class="sep-l" >18.81</td>
+            <td>3.189</td>
+            <td class="sep-l">67.37</td>
+            <td>3.574</td>
+          </tr>
+          <tr>
+            <td class="scene">Montreal Notre Dame</td>
+            <td>448</td>
+            <td class="sep-l win col-ours">0.93</td>
+            <td class="win col-ours">0.418</td>
+            <td class="sep-l"  >13.25</td>
+            <td>1.230</td>
+            <td class="sep-l" >16.12</td>
+            <td>2.134</td>
+            <td class="sep-l">10.79</td>
+            <td>2.052</td>
+          </tr>
+          <tr>
+            <td class="scene">NYC Library</td>
+            <td>330</td>
+            <td class="sep-l win col-ours">0.34</td>
+            <td class="win col-ours">0.095</td>
+            <td class="sep-l"  >7.67</td>
+            <td>1.656</td>
+            <td class="sep-l" >10.26</td>
+            <td>1.912</td>
+            <td class="sep-l">11.90</td>
+            <td>2.408</td>
+          </tr>
+          <tr>
+            <td class="scene">Notre Dame</td>
+            <td>549</td>
+            <td class="sep-l win col-ours">0.52</td>
+            <td class="win col-ours">0.105</td>
+            <td class="sep-l"  >11.88</td>
+            <td>1.430</td>
+            <td class="sep-l" >15.33</td>
+            <td>1.694</td>
+            <td class="sep-l">16.44</td>
+            <td>2.241</td>
+          </tr>
+          <tr>
+            <td class="scene">Piazza del Popolo</td>
+            <td>336</td>
+            <td class="sep-l win col-ours">5.37</td>
+            <td class="win col-ours">0.670</td>
+            <td class="sep-l"  >23.13</td>
+            <td>2.063</td>
+            <td class="sep-l" >22.63</td>
+            <td>2.092</td>
+            <td class="sep-l">32.48</td>
+            <td>2.568</td>
+          </tr>
+          <tr>
+            <td class="scene">Tower of London</td>
+            <td>467</td>
+            <td class="sep-l win col-ours">0.89</td>
+            <td class="win col-ours">0.057</td>
+            <td class="sep-l"  >29.69</td>
+            <td>3.647</td>
+            <td class="sep-l" >29.85</td>
+            <td>3.607</td>
+            <td class="sep-l">59.53</td>
+            <td>3.658</td>
+          </tr>
+          <tr>
+            <td class="scene">Vienna Cathedral</td>
+            <td>824</td>
+            <td class="sep-l win col-ours">7.90</td>
+            <td class="win col-ours">0.590</td>
+            <td class="sep-l"  >43.76</td>
+            <td>2.978</td>
+            <td class="sep-l" >41.58</td>
+            <td>2.802</td>
+            <td class="sep-l">29.49</td>
+            <td>2.561</td>
+          </tr>
+          <tr>
+            <td class="scene">Yorkminster</td>
+            <td>432</td>
+            <td class="sep-l win col-ours">0.43</td>
+            <td class="win col-ours">0.044</td>
+            <td class="sep-l"  >16.45</td>
+            <td>2.223</td>
+            <td class="sep-l" >23.00</td>
+            <td>2.992</td>
+            <td class="sep-l">20.26</td>
+            <td>2.463</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="tbl-note">Feed-forward 3D reconstruction models on the 1DSfM scenes. Errors for these models are an order of magnitude larger, and they perform badly on this type of data.</p>
+    </div>
+    <div class="panel" role="tabpanel" id="panel-retrieval" aria-labelledby="tab-retrieval" hidden>
+      <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="scene" rowspan="2">Scene</th>
+            <th rowspan="2">N<sub>c</sub></th>
+            <th class="sep-l grp ours" colspan="3">Exhaustive matching</th>
+            <th class="sep-l grp" colspan="3">MegaLoc top-30</th>
+          </tr>
+          <tr>
+            <th class="sep-l col-ours">N<sub>r</sub></th>
+            <th class="col-ours">Rot&deg;</th>
+            <th class="col-ours">Trans</th>
+            <th class="sep-l"  >N<sub>r</sub></th>
+            <th>Rot&deg;</th>
+            <th>Trans</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="scene">Alamo</td>
+            <td>573</td>
+            <td class="sep-l col-ours">523</td>
+            <td class="col-ours">1.35</td>
+            <td class="col-ours">0.322</td>
+            <td class="sep-l win">548</td>
+            <td class="win">1.18</td>
+            <td class="win">0.163</td>
+          </tr>
+          <tr>
+            <td class="scene">Ellis Island</td>
+            <td>227</td>
+            <td class="sep-l col-ours">215</td>
+            <td class="col-ours">0.28</td>
+            <td class="win col-ours">0.081</td>
+            <td class="sep-l win">216</td>
+            <td class="win">0.21</td>
+            <td>0.090</td>
+          </tr>
+          <tr>
+            <td class="scene">Madrid Metropolis</td>
+            <td>333</td>
+            <td class="sep-l col-ours">298</td>
+            <td class="win col-ours">1.31</td>
+            <td class="win col-ours">0.145</td>
+            <td class="sep-l win">323</td>
+            <td>1.48</td>
+            <td>3.397</td>
+          </tr>
+          <tr>
+            <td class="scene">Montreal Notre Dame</td>
+            <td>448</td>
+            <td class="sep-l win col-ours">442</td>
+            <td class="col-ours">0.93</td>
+            <td class="col-ours">0.418</td>
+            <td class="sep-l" >338</td>
+            <td class="win">0.11</td>
+            <td class="win">0.015</td>
+          </tr>
+          <tr>
+            <td class="scene">NYC Library</td>
+            <td>330</td>
+            <td class="sep-l col-ours">295</td>
+            <td class="win col-ours">0.34</td>
+            <td class="win col-ours">0.095</td>
+            <td class="sep-l win">319</td>
+            <td>0.92</td>
+            <td>0.537</td>
+          </tr>
+          <tr>
+            <td class="scene">Notre Dame</td>
+            <td>549</td>
+            <td class="sep-l col-ours">527</td>
+            <td class="col-ours">0.52</td>
+            <td class="col-ours">0.105</td>
+            <td class="sep-l win">535</td>
+            <td class="win">0.42</td>
+            <td class="win">0.086</td>
+          </tr>
+          <tr>
+            <td class="scene">Piazza del Popolo</td>
+            <td>336</td>
+            <td class="sep-l col-ours">318</td>
+            <td class="col-ours">5.37</td>
+            <td class="col-ours">0.670</td>
+            <td class="sep-l win">329</td>
+            <td class="win">0.57</td>
+            <td class="win">0.064</td>
+          </tr>
+          <tr>
+            <td class="scene">Tower of London</td>
+            <td>467</td>
+            <td class="sep-l win col-ours">457</td>
+            <td class="win col-ours">0.89</td>
+            <td class="win col-ours">0.057</td>
+            <td class="sep-l" >447</td>
+            <td>2.14</td>
+            <td>0.408</td>
+          </tr>
+          <tr>
+            <td class="scene">Vienna Cathedral</td>
+            <td>824</td>
+            <td class="sep-l col-ours">763</td>
+            <td class="win col-ours">7.90</td>
+            <td class="col-ours">0.590</td>
+            <td class="sep-l win">771</td>
+            <td>9.32</td>
+            <td class="win">0.462</td>
+          </tr>
+          <tr>
+            <td class="scene">Yorkminster</td>
+            <td>432</td>
+            <td class="sep-l col-ours">402</td>
+            <td class="win col-ours">0.43</td>
+            <td class="win col-ours">0.044</td>
+            <td class="sep-l win">405</td>
+            <td>6.32</td>
+            <td>0.469</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="tbl-note">Replacing exhaustive pairwise matching with a sparse top-30 MegaLoc retrieval graph. Despite the large drop in edge density, VGPA holds registration coverage and accuracy.</p>
+    </div>
+    <div class="panel" role="tabpanel" id="panel-uncalibrated" aria-labelledby="tab-uncalibrated" hidden>
+      <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="scene" rowspan="2">Scene</th>
+            <th rowspan="2">N<sub>c</sub></th>
+            <th rowspan="2">Out.%</th>
+            <th class="sep-l grp ours" colspan="3">Ours &mdash; intrinsics known</th>
+            <th class="sep-l grp" colspan="3">Ours &mdash; intrinsics estimated</th>
+          </tr>
+          <tr>
+            <th class="sep-l col-ours">N<sub>r</sub></th>
+            <th class="col-ours">Rot&deg;</th>
+            <th class="col-ours">Trans</th>
+            <th class="sep-l">N<sub>r</sub></th>
+            <th>Rot&deg;</th>
+            <th>Trans</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="scene" colspan="9" style="background:var(--surface-2);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted)">BlendedMVS &mdash; shared intrinsics</td>
+          </tr>
+          <tr>
+            <td class="scene">scene0</td>
+            <td>75</td>
+            <td>2.0</td>
+            <td class="sep-l win col-ours">74</td>
+            <td class="col-ours">0.149</td>
+            <td class="col-ours">0.0204</td>
+            <td class="sep-l win">74</td>
+            <td class="win">0.122</td>
+            <td class="win">0.0159</td>
+          </tr>
+          <tr>
+            <td class="scene">scene1</td>
+            <td>51</td>
+            <td>1.4</td>
+            <td class="sep-l win col-ours">51</td>
+            <td class="col-ours">0.342</td>
+            <td class="win col-ours">0.0345</td>
+            <td class="sep-l win">51</td>
+            <td class="win">0.337</td>
+            <td>0.0401</td>
+          </tr>
+          <tr>
+            <td class="scene">scene2</td>
+            <td>33</td>
+            <td>2.2</td>
+            <td class="sep-l win col-ours">33</td>
+            <td class="win col-ours">0.008</td>
+            <td class="win col-ours">0.0004</td>
+            <td class="sep-l win">33</td>
+            <td>0.025</td>
+            <td>0.0050</td>
+          </tr>
+          <tr>
+            <td class="scene">scene3</td>
+            <td>66</td>
+            <td>8.8</td>
+            <td class="sep-l win col-ours">66</td>
+            <td class="win col-ours">0.006</td>
+            <td class="win col-ours">0.0003</td>
+            <td class="sep-l win">66</td>
+            <td>0.010</td>
+            <td>0.0014</td>
+          </tr>
+          <tr>
+            <td class="scene" colspan="9" style="background:var(--surface-2);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted)">MegaDepth &mdash; intrinsics not shared</td>
+          </tr>
+          <tr>
+            <td class="scene">0012</td>
+            <td>299</td>
+            <td>16.3</td>
+            <td class="sep-l win col-ours">295</td>
+            <td class="win col-ours">0.77</td>
+            <td class="win col-ours">0.086</td>
+            <td class="sep-l">292</td>
+            <td>0.98</td>
+            <td>0.253</td>
+          </tr>
+          <tr>
+            <td class="scene">0024</td>
+            <td>356</td>
+            <td>23.0</td>
+            <td class="sep-l win col-ours">328</td>
+            <td class="col-ours">3.59</td>
+            <td class="col-ours">1.122</td>
+            <td class="sep-l">308</td>
+            <td class="win">1.79</td>
+            <td class="win">0.508</td>
+          </tr>
+          <tr>
+            <td class="scene">0048</td>
+            <td>512</td>
+            <td>24.2</td>
+            <td class="sep-l win col-ours">501</td>
+            <td class="win col-ours">0.10</td>
+            <td class="win col-ours">0.011</td>
+            <td class="sep-l">485</td>
+            <td>0.38</td>
+            <td>0.456</td>
+          </tr>
+          <tr>
+            <td class="scene">0083</td>
+            <td>635</td>
+            <td>31.3</td>
+            <td class="sep-l win col-ours">622</td>
+            <td class="win col-ours">0.32</td>
+            <td class="col-ours">0.062</td>
+            <td class="sep-l">596</td>
+            <td>0.64</td>
+            <td class="win">0.058</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="tbl-note">Calibration is not required.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- =================================================== qualitative ==== -->
+<section id="gallery">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>More qualitative results</h2>
+      <p>Reconstructions and recovered cameras across the different datasets. Click any thumbnail to enlarge.</p>
+    </div>
+    <div class="gallery">
+      <button class="tile" type="button">
+        <img src="static/images/recon/0060.png" alt="VGPA reconstruction of Scene 0060 from the MegaDepth dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/0048.png" alt="VGPA reconstruction of Scene 0048 from the MegaDepth dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/0046.png" alt="VGPA reconstruction of Scene 0046 from the MegaDepth dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/0019_300.png" alt="VGPA reconstruction of Scene 0019 from the MegaDepth dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/0022_300.png" alt="VGPA reconstruction of Scene 0022 from the MegaDepth dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/0012_300.png" alt="VGPA reconstruction of Scene 0012 from the MegaDepth dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/0063_300.png" alt="VGPA reconstruction of Scene 0063 from the MegaDepth dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/0015_300.png" alt="VGPA reconstruction of Scene 0015 from the MegaDepth dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/5016.png" alt="VGPA reconstruction of Scene 5016 from the MegaDepth dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/Noterdam.png" alt="VGPA reconstruction of Notre Dame from the 1DSfM dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/Ellis_Island.png" alt="VGPA reconstruction of Ellis Island from the 1DSfM dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/NYC_library.png" alt="VGPA reconstruction of NYC Library from the 1DSfM dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/york.png" alt="VGPA reconstruction of Yorkminster from the 1DSfM dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/scene0.png" alt="VGPA reconstruction of scene0 from the BlendedMVS dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/Fountain_11.png" alt="VGPA reconstruction of fountain-P11 from the Strecha dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/jesus25.png" alt="VGPA reconstruction of Herz-Jesus-P25 from the Strecha dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/castle_30.png" alt="VGPA reconstruction of castle-P30 from the Strecha dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/facade.png" alt="VGPA reconstruction of façade from the Strecha dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/releif.png" alt="VGPA reconstruction of relief from the Strecha dataset" loading="lazy">
+      </button>
+      <button class="tile" type="button">
+        <img src="static/images/recon/terace.png" alt="VGPA reconstruction of terrace from the Strecha dataset" loading="lazy">
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== bibtex ==== -->
+<section id="bibtex">
+  <div class="wrap wrap--narrow">
+    <div class="section-head"><h2>BibTeX</h2></div>
+    <!-- TODO(placeholder): confirm the citation key, pages and publisher line
+         against the official ECCV 2026 proceedings entry once it is issued. -->
+    <div class="code-block">
+      <button class="copy-btn" type="button" data-copy="#bib">Copy</button>
+      <pre id="bib">@inproceedings{khatib2026vgpa,
+  title     = {Learning Global Camera Poses from Noisy View-Graphs
+               for Structure from Motion},
+  author    = {Khatib, Fadi and Galun, Meirav and Basri, Ronen},
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  year      = {2026}
+}</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== footer ==== -->
+<footer>
+  <div class="wrap wrap--narrow">
+    <p>
+      <b style="color:var(--text-secondary)">Acknowledgement.</b>
+      Research was partially supported by the MBZUAI&ndash;WIS Joint Program for Artificial
+      Intelligence Research, by Minerva, by the Israeli Council for Higher Education (CHE) via the
+      Weizmann Data Science Research Center, and by research grants from the Estates of Tully and
+      Michele Plesser and the Anita James Rosen and Harry Schutzman Foundations.
+      <b>Thanks to Claude for help building this page!</b>
+    </p>
+  </div>
+</footer>
+
+<!-- ====================================================== lightbox ==== -->
+<div class="lightbox" id="lightbox" hidden>
+  <button class="close" id="lightboxClose" type="button" aria-label="Close">&times;</button>
+  <figure>
+    <img id="lightboxImg" src="" alt="">
+  </figure>
+</div>
+
+<script src="static/js/main.js?v=c0aeea5a"></script>
+
+<!-- three.js r160 lives in static/vendor/three/ and is imported by relative
+     URL from static/js/recon-viewer.js -- no import map, no CDN, so the viewer
+     works offline, behind a firewall and in older browsers. It loads only when
+     a reader presses "Explore in 3D". -->
+<script type="module">
+  import { initReconCards } from "./static/js/recon-viewer.js?v=85887f4f";
+  initReconCards();
+</script>
+</body>
+</html>

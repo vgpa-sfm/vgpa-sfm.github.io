@@ -1,0 +1,25 @@
+# Python bytecode from the tools/
+__pycache__/
+*.pyc
+
+# Editors and OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ---- Generated, and not served by the page ----
+# tools/make_media.py writes these: orbit loops (the page shows stills until
+# a reader asks for 3D) and GIFs for slides. Regenerate rather than commit:
+#   python tools/make_media.py
+static/recon/*.webp
+static/recon/*.gif
+static/recon/media.json
+# posters for scenes that have no card of their own
+static/recon/0141.jpg
+# exported but not shown on the page; flip grid=True in tools/scenes.py to use it
+static/recon/0493.*
+
+# gallery tile dropped from the page; regenerate from the paper figures if wanted
+static/images/recon/0496_300.png
