@@ -23,12 +23,11 @@ interactive viewer fetches its data, and a `file://` page is not allowed to.
 ```
 index.html              the whole page
 static/css/style.css    one stylesheet; the palette lives at the top
-static/js/main.js       theme toggle, tabs, bar charts, lightbox
+static/js/main.js       theme toggle, tabs, lightbox
 static/js/recon-viewer.js   the WebGL reconstruction viewer
 static/vendor/three/    three.js r160, vendored (no CDN)
 static/recon/           per-scene .vgpa point clouds, stills, animations
 static/images/          teaser, architecture and gallery figures
-static/paper_vgpa.pdf   the paper
 tools/                  regenerates everything in static/recon/
 ```
 
@@ -37,11 +36,9 @@ packages are involved and why, and how the scenes are framed.
 
 ## Before publishing
 
-Two placeholders are left, both marked `TODO(placeholder)` in `index.html`:
-
-- the **arXiv** button — set its `href` and delete `data-placeholder`, which
-  is what draws the "soon" badge
-- the **Code** button, and the canonical URL in the `<head>`
+One placeholder is left, marked `TODO(placeholder)` in `index.html`: the
+**Code** button — set its `href` and delete `data-placeholder`, which is what
+draws the "soon" badge. The Paper and arXiv buttons point at arXiv.
 
 ## Note
 
